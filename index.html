@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Tree with Three.js</title>
+    <style>
+        /* Basic styles to remove margins, hide scrollbars and set background color */
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #87CEEB; /* Sky blue background */
+        }
+        canvas {
+            display: block; /* Removes spacing around the canvas */
+        }
+    </style>
+</head>
+<body>
+    <!-- Load Three.js library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <!-- Load OrbitControls for interactive rotation with mouse -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // Create the scene where all 3D objects will go
+        const scene = new THREE.Scene();
+
+        // Create the camera (PerspectiveCamera: FOV, aspect ratio, near and far clipping planes)
+        const camera = new THREE.PerspectiveCamera(
+            75,
+            window.innerWidth / window.innerHeight,
+            0.1,
+            1000
+        );
+
+        // Create the WebGL renderer and append it to the page
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0x87CEEB); // Sky blue
+        document.body.appendChild(renderer.domElement);
+
+        // Enable orbit controls to rotate the scene with the mouse
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true; // Smooth motion
+        controls.dampingFactor = 0.05;
+        controls.target.set(0, 1, 0); // Point the camera looks at
+        controls.update();
+
+        // Add ambient light to brighten the entire scene
+        const ambientLight = new THREE.AmbientLight(0x404040);
+        scene.add(ambientLight);
+
+        // Add directional light (like sunlight)
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(1, 1, 1);
+        scene.add(directionalLight);
+
+        // Create a green plane to simulate grass
+        const groundGeometry = new THREE.PlaneGeometry(20, 20);
+        const groundMaterial = new THREE.MeshLambertMaterial({ color: 0x7CFC00 });
+        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+        ground.rotation.x = -Math.PI / 2; // Rotate to lay flat
+        ground.position.y = -2; // Lower the plane
+        scene.add(ground);
+
+        // Create a group to hold all parts of the tree
+        const treeGroup = new THREE.Group();
+        scene.add(treeGroup);
+
+        // Function to create the trunk
+        function createTrunk() {
+            const trunkGeometry = new THREE.CylinderGeometry(0.2, 0.4, 4, 8);
+            const trunkMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 }); // Brown
+            const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+            trunk.position.y = 0;
+            return trunk;
+        }
+
+        // Function to create branches
+        function createBranches() {
+            const branchGroup = new THREE.Group();
+
+            // Helper function to create a single branch
+            const createBranch = (x, y, z, rotX, rotY, rotZ, scale) => {
+                const branchGeometry = new THREE.CylinderGeometry(0.05, 0.15, 1.5, 5);
+                const branchMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+                const branch = new THREE.Mesh(branchGeometry, branchMaterial);
+                branch.position.set(x, y, z);
+                branch.rotation.set(rotX, rotY, rotZ);
+                branch.scale.set(scale, scale, scale);
+                return branch;
+            };
+
+            // Add multiple branches at different angles and positions
+            branchGroup.add(createBranch(0.5, 1.5, 0, Math.PI/4, 0, 0, 1));
+            branchGroup.add(createBranch(-0.4, 1.3, 0.3, Math.PI/3, Math.PI/4, 0, 0.8));
+            branchGroup.add(createBranch(0.2, 2, -0.3, Math.PI/5, Math.PI/2, 0, 0.9));
+            branchGroup.add(createBranch(-0.3, 1.8, -0.2, Math.PI/4, Math.PI/1.5, 0, 0.7));
+            branchGroup.add(createBranch(0, 2.2, 0.4, Math.PI/6, Math.PI, 0, 0.6));
+
+            return branchGroup;
+        }
+
+        // Function to create leaves (default: cone-shaped like a pine tree)
+        function createLeaves(type = 'cone') {
+            const leavesGroup = new THREE.Group();
+
+            if (type === 'cone') {
+                // Cone-shaped leaves
+                const coneGeometry = new THREE.ConeGeometry(1.2, 3, 8);
+                const coneMaterial = new THREE.MeshLambertMaterial({ color: 0x228B22 }); // Dark green
+
+                const cone1 = new THREE.Mesh(coneGeometry, coneMaterial);
+                cone1.position.y = 2;
+                leavesGroup.add(cone1);
+
+                const cone2 = new THREE.Mesh(coneGeometry, coneMaterial);
+                cone2.position.y = 3;
+                cone2.scale.set(0.8, 0.8, 0.8);
+                leavesGroup.add(cone2);
+
+                const cone3 = new THREE.Mesh(coneGeometry, coneMaterial);
+                cone3.position.y = 4;
+                cone3.scale.set(0.6, 0.6, 0.6);
+                leavesGroup.add(cone3);
+
+            } else {
+                // Sphere-shaped leaves
+                const sphereGeometry = new THREE.SphereGeometry(1.5, 16, 16);
+                const sphereMaterial = new THREE.MeshLambertMaterial({ color: 0x32CD32 });
+
+                const sphere1 = new THREE.Mesh(sphereGeometry, sphereMaterial);
+                sphere1.position.y = 2.5;
+                sphere1.scale.set(1, 1.2, 1);
+                leavesGroup.add(sphere1);
+
+                const sphere2 = new THREE.Mesh(sphereGeometry, sphereMaterial);
+                sphere2.position.set(0.7, 2, 0.5);
+                sphere2.scale.set(0.6, 0.6, 0.6);
+                leavesGroup.add(sphere2);
+
+                const sphere3 = new THREE.Mesh(sphereGeometry, sphereMaterial);
+                sphere3.position.set(-0.7, 2.2, -0.3);
+                sphere3.scale.set(0.7, 0.7, 0.7);
+                leavesGroup.add(sphere3);
+
+                const sphere4 = new THREE.Mesh(sphereGeometry, sphereMaterial);
+                sphere4.position.set(0.3, 3, -0.5);
+                sphere4.scale.set(0.5, 0.5, 0.5);
+                leavesGroup.add(sphere4);
+            }
+
+            return leavesGroup;
+        }
+
+        // Create tree components
+        const trunk = createTrunk();
+        const branches = createBranches();
+        const leaves = createLeaves(); // Default to "cone" type
+
+        // Add components to the tree group
+        treeGroup.add(trunk);
+        treeGroup.add(branches);
+        treeGroup.add(leaves);
+
+        // Position the tree group
+        treeGroup.position.y = 0;
+
+        // Set camera position and orientation
+        camera.position.set(5, 3, 7);
+        camera.lookAt(treeGroup.position);
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate); // Keep looping
+            controls.update(); // Update orbit controls
+            renderer.render(scene, camera); // Render the scene
+        }
+
+        // Handle browser resize to keep canvas responsive
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Start the animation
+        animate();
+    </script>
+</body>
+</html>
